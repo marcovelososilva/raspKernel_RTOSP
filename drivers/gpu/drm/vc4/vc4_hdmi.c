@@ -3164,10 +3164,25 @@ static int vc4_hdmi_bind(struct device *dev, struct device *master, void *data)
 
 	if (variant->max_pixel_clock == 600000000) {
 		struct vc4_dev *vc4 = to_vc4_dev(drm);
-		long max_rate = clk_round_rate(vc4->hvs->core_clk, 550000000);
+		struct vc4_hvs *hvs = vc4->hvs;
+		struct clk *core_clk;
 
-		if (max_rate < 550000000)
+		/*
+		 * We need to get a new struct clk for the HVS clock to
+		 * avoid messing with the HVS actual boundaries.
+		 */
+		core_clk = clk_get(&hvs->pdev->dev, NULL);
+		if (IS_ERR(core_clk)) {
+			ret = PTR_ERR(core_clk);
+			goto err_put_ddc;
+		}
+
+		ret = clk_set_min_rate(core_clk, 550000000);
+		if (ret)
 			vc4_hdmi->disable_4kp60 = true;
+
+		clk_drop_range(core_clk);
+		clk_put(core_clk);
 	}
 
 	/*
