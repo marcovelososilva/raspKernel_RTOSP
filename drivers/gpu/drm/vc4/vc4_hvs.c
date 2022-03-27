@@ -908,6 +908,12 @@ static int vc4_hvs_bind(struct device *dev, struct device *master, void *data)
 			dev_err(&pdev->dev, "Couldn't enable the core clock\n");
 			return ret;
 		}
+
+		ret = clk_set_min_rate(hvs->core_clk, 550000000);
+		if (ret)
+			hvs->disable_4kp60 = true;
+
+		clk_drop_range(hvs->core_clk);
 	}
 
 	if (!hvs->hvs5)

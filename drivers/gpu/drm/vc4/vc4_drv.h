@@ -341,6 +341,7 @@ struct vc4_hvs {
 
 	/* HVS version 5 flag, therefore requires updated dlist structures */
 	bool hvs5;
+	bool disable_4kp60;
 };
 
 struct vc4_plane {

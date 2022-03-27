@@ -884,6 +884,7 @@ static int
 vc4_core_clock_atomic_check(struct drm_atomic_state *state)
 {
 	struct vc4_dev *vc4 = to_vc4_dev(state->dev);
+	struct vc4_hvs *hvs = vc4->hvs;
 	struct drm_private_state *priv_state;
 	struct vc4_hvs_state *hvs_new_state;
 	struct vc4_load_tracker_state *load_state;
@@ -945,6 +946,8 @@ vc4_core_clock_atomic_check(struct drm_atomic_state *state)
 	}
 
 	hvs_new_state->core_clock_rate = max(cob_rate, pixel_rate);
+	hvs_new_state->core_clock_rate = min(hvs_new_state->core_clock_rate,
+	                                     hvs->disable_4kp60 ? 500000000ul : 550000000ul);
 
 	return 0;
 }
