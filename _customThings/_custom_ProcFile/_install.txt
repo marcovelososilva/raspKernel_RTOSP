@@ -1,0 +1,17 @@
+TO COMPILE:
+make
+
+TO "INSTALL":
+make insert
+
+TO REMOVE after installed:
+make remove
+
+TO CLEAN folder
+make CLEAN
+
+---------------------//------------------------------
+lsmod | grep rtosp
+hello                  16384  0
+cat /proc/rtosp
+int 
