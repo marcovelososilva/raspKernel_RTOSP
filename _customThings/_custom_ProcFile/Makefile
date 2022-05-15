@@ -15,14 +15,16 @@ modules_install:
 kernel_clean:
 	@$(MAKE) -C $(KROOT) M=$(PWD) clean
 
+install:modules_install
+
 clean: kernel_clean
 	rm -rf   Module.symvers modules.order
 
 insert: modules
 	sudo dmesg -c
-	sudo insmod rtosp.ko
+	sudo insmod $(MYPROC).ko
 
 remove: clean
-	sudo rmmod rtosp
+	sudo rmmod $(MYPROC)
 
 	

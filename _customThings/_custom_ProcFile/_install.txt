@@ -11,7 +11,20 @@ TO CLEAN folder
 make CLEAN
 
 ---------------------//------------------------------
-lsmod | grep rtosp
+lsmod | grep rtosp --> shows all kernel modules currently residing (or live) in kernel memory
+
 hello                  16384  0
 cat /proc/rtosp
 int 
+
+sudo insmod ./rtosp.ko  --> installl module by hand
+sudo rmmod rtosp        --> to remove the module by hand
+
+dmesg | tail    --> will dump the entire kernel log buffer content to stdout
+
+lsmod
+rmmod
+insmod
+modinfo
+modprobe
+depmod
