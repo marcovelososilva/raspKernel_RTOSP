@@ -1262,22 +1262,20 @@ static ssize_t rtosp_write(struct file *file, const char __user *buf,
 					size_t count, loff_t *ppos) 
 {
 	struct inode * inode = file_inode(file);
-	struct task_struct *task = get_proc_task(inode);
-	char tmpbuf[MYTMPBUFLEN];
-	int value, num;
+ 	struct task_struct *task = get_proc_task(inode);
+ 	char tmpbuf[MYTMPBUFLEN];
+ 	int value, num;
 
-	if (!task)
-		return -ESRCH;
-	if(*ppos > 0 || count > BUFSIZE)
-		return -EFAULT;
-	if(copy_from_user(tempbuf, buf, count))
-		return -EFAULT;
-	num = sscanf(buf,"%d",&value);
-	if(num != 1)
-		return -EFAULT;
-	task->rtosp = value;
-	put_task_struct(task);
-	return simple_write_to_buffer(tmpbuf, MYTMPBUFLEN, ppos, buf, count);
+ 	if (!task)
+ 		return -ESRCH;
+ 	if(copy_from_user(tmpbuf, buf, count))
+ 		return -EFAULT;
+ 	num = sscanf(buf,"%d",&value);
+ 	if(num != 1)
+ 		return -EFAULT;
+ 	task->rtosp = value;
+ 	put_task_struct(task);
+ 	return simple_write_to_buffer(tmpbuf, MYTMPBUFLEN, ppos, buf, count);
 
 }
 
