@@ -2706,6 +2706,11 @@ COMPAT_SYSCALL_DEFINE1(sysinfo, struct compat_sysinfo __user *, info)
 
 SYSCALL_DEFINE0(rtosp)
 {
-	printk(KERN_ALERT "rtosp syscall called.\n");
+	struct task_struct *task;
+
+	for_each_process(task)
+	{
+		printk(KERN_ALERT "PID: %d | RTOSP = %d | state: %d", task->pid, task->rtosp, task->__state);
+	}
 	return 0;
 }
