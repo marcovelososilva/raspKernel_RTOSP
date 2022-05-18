@@ -1258,12 +1258,11 @@ static ssize_t rtosp_read(struct file *file, char __user *buf,
 	return simple_read_from_buffer(buf, count, ppos, tmpbuf, length);
 }
 
-static ssize_t rtosp_write(struct file *file, char __user *buf,
+static ssize_t rtosp_write(struct file *file, const char __user *buf,
 					size_t count, loff_t *ppos) 
 {
 	struct inode * inode = file_inode(file);
 	struct task_struct *task = get_proc_task(inode);
-	ssize_t length;
 	char tmpbuf[MYTMPBUFLEN];
 	int value, num;
 
@@ -1277,8 +1276,9 @@ static ssize_t rtosp_write(struct file *file, char __user *buf,
 	if(num != 1)
 		return -EFAULT;
 	task->rtosp = value;
+	put_task_struct(task);
+	return simple_write_to_buffer(tmpbuf, MYTMPBUFLEN, ppos, buf, count);
 
-	return 0;
 }
 
 static const struct file_operations proc_rtosp_operations = {
