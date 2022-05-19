@@ -2704,30 +2704,41 @@ COMPAT_SYSCALL_DEFINE1(sysinfo, struct compat_sysinfo __user *, info)
 }
 #endif /* CONFIG_COMPAT */
 
-SYSCALL_DEFINE2(rtosp, pid_t *, user_array, int *, cnt)
+SYSCALL_DEFINE2(rtosp, int *, user_array, int *, cnt)
 {
 	struct task_struct *task;
-	pid_t kernel_buffer[10];
+	struct task_struct *task_child;
+	struct list_head *list;
+	int kernel_buffer[10];
 	long kcnt = 0;
 
 	for_each_process(task)
 	{
-		if(task->__state == 1 && task->rtosp == 1)
+		if((task->policy == 1 || task->policy) && task->rtosp == 1)
 		{
-			kcnt+=1;
 			//kernel_buffer = krealloc(kernel_buffer, kcnt * sizeof(pid_t), GFP_KERNEL);
 			kernel_buffer[kcnt] = task->pid;
 			printk(KERN_ALERT "Found %d\n", kernel_buffer[kcnt]);
+			kcnt++;
 		}
+		list_for_each(list, &task->children)
+		{
+            task_child = list_entry(list, struct task_struct, sibling);
+			if((task_child->policy == 1 || task_child->policy) && task->rtosp == 1)
+			{
+				//kernel_buffer = krealloc(kernel_buffer, kcnt * sizeof(pid_t), GFP_KERNEL);
+				kernel_buffer[kcnt] = task->pid;
+				printk(KERN_ALERT "Found %d\n", kernel_buffer[kcnt]);
+				kcnt++;
+			}
+        }
 	}
 	printk(KERN_ALERT "Total %ld\n", kcnt);
 
 	if(kcnt > 0)
 	{
-		if(copy_to_user(user_array, &kernel_buffer, (kcnt) * sizeof(pid_t)))
+		if(copy_to_user(user_array, &kernel_buffer, (kcnt) * sizeof(int)))
 			return -EFAULT;
-		/*if(copy_to_user(cnt, &kcnt, (kcnt * sizeof(pid_t))))
-			return -EFAULT;*/
 		put_user(kcnt, cnt);
 		
 	}
