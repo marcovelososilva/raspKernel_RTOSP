@@ -2704,8 +2704,37 @@ COMPAT_SYSCALL_DEFINE1(sysinfo, struct compat_sysinfo __user *, info)
 }
 #endif /* CONFIG_COMPAT */
 
-SYSCALL_DEFINE0(rtosp)
+SYSCALL_DEFINE2(rtosp, pid_t *, user_array, int *, cnt)
 {
-	printk(KERN_ALERT "rtosp syscall called.\n");
+	struct task_struct *task;
+	pid_t kernel_buffer[10];
+	long kcnt = 0;
+
+	for_each_process(task)
+	{
+		if(task->__state == 1 && task->rtosp == 1)
+		{
+			kcnt+=1;
+			//kernel_buffer = krealloc(kernel_buffer, kcnt * sizeof(pid_t), GFP_KERNEL);
+			kernel_buffer[kcnt] = task->pid;
+			printk(KERN_ALERT "Found %d\n", kernel_buffer[kcnt]);
+		}
+	}
+	printk(KERN_ALERT "Total %ld\n", kcnt);
+
+	if(kcnt > 0)
+	{
+		if(copy_to_user(user_array, &kernel_buffer, (kcnt) * sizeof(pid_t)))
+			return -EFAULT;
+		/*if(copy_to_user(cnt, &kcnt, (kcnt * sizeof(pid_t))))
+			return -EFAULT;*/
+		put_user(kcnt, cnt);
+		
+	}
+	else
+	{
+		printk(KERN_ALERT "No tasks found\n");
+	}
+	
 	return 0;
 }

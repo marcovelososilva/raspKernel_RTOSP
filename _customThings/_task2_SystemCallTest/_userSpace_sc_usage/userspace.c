@@ -8,15 +8,19 @@
 
 #define SYS_rtosp 449
 
-int main(int argc, char **argv)
+int main()
 {
-  if (argc <= 1) {
-    printf("Must provide a string to give to system call.\n");
-    return -1;
+  pid_t user_array[10];
+  int size = 0;
+  long res;
+  res = syscall(SYS_rtosp, &user_array, &size);
+
+  printf("Syscall returned %d\n", res);
+  printf("%d processes w/ RTOSP set to 1\n", size);
+
+  for(int i = 0; i<size; i++)
+  {
+    printf("PID: %d\n", user_array[i]);
   }
-  char *arg = argv[1];
-  printf("Making system call with \"%s\".\n", arg);
-  long res = syscall(SYS_rtosp, arg);
-  printf("System call returned %ld.\n", res);
-  return res;
+  return 0;
 }
