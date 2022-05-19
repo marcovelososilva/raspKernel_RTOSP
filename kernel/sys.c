@@ -2714,7 +2714,7 @@ SYSCALL_DEFINE2(rtosp, int *, user_array, int *, cnt)
 
 	for_each_process(task)
 	{
-		if((task->policy == 1 || task->policy) && task->rtosp == 1)
+		if((task->policy == 1 || task->policy == 2) && task->rtosp == 1)
 		{
 			//kernel_buffer = krealloc(kernel_buffer, kcnt * sizeof(pid_t), GFP_KERNEL);
 			kernel_buffer[kcnt] = task->pid;
@@ -2724,7 +2724,7 @@ SYSCALL_DEFINE2(rtosp, int *, user_array, int *, cnt)
 		list_for_each(list, &task->children)
 		{
             task_child = list_entry(list, struct task_struct, sibling);
-			if((task_child->policy == 1 || task_child->policy) && task->rtosp == 1)
+			if((task_child->policy == 1 || task_child->policy == 2) && task->rtosp == 1)
 			{
 				//kernel_buffer = krealloc(kernel_buffer, kcnt * sizeof(pid_t), GFP_KERNEL);
 				kernel_buffer[kcnt] = task->pid;
