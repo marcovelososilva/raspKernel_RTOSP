@@ -56,7 +56,11 @@ static ssize_t  get_next_rtosp_show(struct kobject *kobj,
 static ssize_t  get_next_rtosp_store(struct kobject *kobj, 
                         struct kobj_attribute *attr,const char *buf, size_t count);
 
-struct kobj_attribute set_rtosp_attr = __ATTR(set_rtosp, 0664, set_rtosp_show, set_rtosp_store);
+/* warning! need write-all permission so overriding check */ 
+#undef VERIFY_OCTAL_PERMISSIONS
+#define VERIFY_OCTAL_PERMISSIONS(perms) (perms)
+
+struct kobj_attribute set_rtosp_attr = __ATTR(set_rtosp, 0666, set_rtosp_show, set_rtosp_store);
 struct kobj_attribute get_next_rtosp_attr = __ATTR(get_next_rtosp, 0444, get_next_rtosp_show, get_next_rtosp_store);
 
 /* File operation sturcture */
@@ -102,6 +106,7 @@ static ssize_t set_rtosp_store(struct kobject *kobj,
         int paramPID = 0;
         sscanf(buf,"%d",&paramPID);
         pr_info("set_rtosp - Write!!! pid change %d\n", paramPID);
+        etx_value = paramPID;
         return count;
 }
 #pragma endregion
