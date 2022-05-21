@@ -105,18 +105,25 @@ static ssize_t set_rtosp_show(struct kobject *kobj,
 static ssize_t set_rtosp_store(struct kobject *kobj, 
                 struct kobj_attribute *attr,const char *buf, size_t count)
 {
+        pr_info("SET RTOSP - Write function!\n");
         int paramPID = 0;
-        sscanf(buf,"%d",&paramPID);
-        pr_info("set_rtosp - Write!!! pid change %d\n", paramPID);
-        
+        int changed = 0;
         int len=0;
         struct task_struct *task;
+        sscanf(buf,"%d",&paramPID);
         
         for_each_process(task){
                 if(task->pid == paramPID){
                         task->rtosp = 1;
+                        changed = 1;
                         break;
                 }
+        }
+
+        if (changed == 1){
+                pr_info("SET RTOSP - RTOSP var CHANGED ON - pid: %d\n", paramPID);
+        }else{
+                pr_info("SET RTOSP - PID NOT FOUND AND RTOSP var NOT CHANGED - pid: %d\n", paramPID);
         }
               
         return count;
