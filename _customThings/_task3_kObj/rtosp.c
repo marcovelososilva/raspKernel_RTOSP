@@ -16,26 +16,32 @@
 #include <linux/wait.h>         // Required for the wait queues
 #include <linux/proc_fs.h>
 #include <linux/sched.h>
+#include <linux/list.h>
 
+#pragma region VARIABLES
 //GLOBAL VARIABLES - QUEUE
 uint32_t read_count = 0;
 static struct task_struct *wait_thread;
+wait_queue_head_t wait_queue_etx;
 
 dev_t dev = 0;
 static struct class *dev_class;
 static struct cdev etx_cdev;
-wait_queue_head_t wait_queue_etx;
 int wait_queue_flag = 0;
-
-
-//GLOBAL ORIGINAL
 volatile int etx_value = 0;
-
-// dev_t dev = 0;
-// static struct class *dev_class;
-// static struct cdev etx_cdev;
 struct kobject *kobj_ref;
 
+//list running processes
+struct process_struct{
+ struct list_head _list;
+ struct task_struct *_task;
+};
+struct list_head m_processListHead;
+struct process_struct m_processListStruct;
+
+#pragma endregion
+
+#pragma region PROTOTYPES
 /* Function Prototypes */
 static int      __init rtosp_init(void);
 static void     __exit rtosp_exit(void);
@@ -58,6 +64,11 @@ static ssize_t  get_next_rtosp_show(struct kobject *kobj,
 static ssize_t  get_next_rtosp_store(struct kobject *kobj, 
                         struct kobj_attribute *attr,const char *buf, size_t count);
 
+/*************** aux functions **********************/
+void addRunningProcesses(void);
+#pragma endregion
+
+#pragma region PERMISSIONS_setAndGet_RTOSP
 /* warning! need write-all permission so overriding check */ 
 #undef VERIFY_OCTAL_PERMISSIONS
 #define VERIFY_OCTAL_PERMISSIONS(perms) (perms)
@@ -74,6 +85,7 @@ static struct file_operations fops =
         .open           = etx_open,
         .release        = etx_release,
 };
+#pragma endregion
 
 #pragma region QUEUE_FUNCTION
 static int wait_function(void *unused)
@@ -92,7 +104,7 @@ static int wait_function(void *unused)
 }
 #pragma endregion
 
-#pragma region  SHOW_STORE_SET_RTOPS
+#pragma region SHOW_STORE_SET_RTOPS
 /* This function will be called when we read the sysfs file */
 static ssize_t set_rtosp_show(struct kobject *kobj, 
                 struct kobj_attribute *attr, char *buf)
@@ -105,13 +117,13 @@ static ssize_t set_rtosp_show(struct kobject *kobj,
 static ssize_t set_rtosp_store(struct kobject *kobj, 
                 struct kobj_attribute *attr,const char *buf, size_t count)
 {
-        pr_info("SET RTOSP - Write function!\n");
         int paramPID = 0;
         int changed = 0;
-        int len=0;
         struct task_struct *task;
         sscanf(buf,"%d",&paramPID);
         
+        pr_info("SET RTOSP - Write function!\n");
+        //TODO: FUNCTION GET BY PID????
         for_each_process(task){
                 if(task->pid == paramPID){
                         task->rtosp = 1;
@@ -130,14 +142,24 @@ static ssize_t set_rtosp_store(struct kobject *kobj,
 }
 #pragma endregion
 
-#pragma region  SHOW_STORE_GET_NEXT_RTOPS
+#pragma region SHOW_STORE_GET_NEXT_RTOPS
 /* This function will be called when we read the sysfs file */
 static ssize_t get_next_rtosp_show(struct kobject *kobj, 
                 struct kobj_attribute *attr, char *buf)
 {
+        struct list_head *iter;
+        struct process_struct *objPtr;
+
         pr_info("get_next_rtosp - Read!!!\n");
+       
         wait_queue_flag = 1;
         wake_up_interruptible(&wait_queue_etx);
+       
+        list_for_each(iter, &m_processListHead){
+                objPtr = list_entry(iter, struct process_struct, _list);
+                pr_info("%d\n", objPtr->_task->pid);
+        }
+
         return sprintf(buf, "%d", etx_value);
 }
 
@@ -184,10 +206,13 @@ static ssize_t etx_write(struct file *filp,
 }
 #pragma endregion
  
- #pragma region MODULE_FUNCTIONS
+#pragma region MODULE_FUNCTIONS
 /* Module Init function */
 static int __init rtosp_init(void)
 {
+         //INSTANCIATE THE LIST
+        INIT_LIST_HEAD(&m_processListHead);
+
         /*Allocating Major number*/        
         if((alloc_chrdev_region(&dev, 0, 1, "etx_Dev")) <0){
                 pr_info("Cannot allocate major number\n");
@@ -242,6 +267,10 @@ static int __init rtosp_init(void)
                 goto r_sysfs_get;
         }
 
+        //add runing processes to List
+        addRunningProcesses();
+
+        /* INIT DONE SUCESSFULY */
         pr_info("RTOSP - Device Driver Insert...Done!!!\n");
         return 0;
  
@@ -273,9 +302,24 @@ static void __exit rtosp_exit(void)
         unregister_chrdev_region(dev, 1);
         pr_info("RTOSP - Device Driver Remove...Done!!!\n");
 }
-
 #pragma endregion 
 
+#pragma region AUXFUNCTIONS
+void addRunningProcesses(){
+        struct task_struct *taskNow;
+
+        pr_info("addRunningProcesses! NOW!!!!\n");
+
+        for_each_process(taskNow){
+                if(taskNow->__state == 0){
+                        struct process_struct *procToAdd = kmalloc(sizeof(struct process_struct *), GFP_KERNEL);
+                        procToAdd->_task = taskNow;
+                        list_add(&procToAdd->_list, &m_processListHead);
+                        pr_info("Adding pid:%d\n", taskNow->pid);
+                }
+        } 
+}
+#pragma endregion
 module_init(rtosp_init);
 module_exit(rtosp_exit);
  
