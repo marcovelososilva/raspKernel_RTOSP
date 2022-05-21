@@ -93,18 +93,19 @@ static struct file_operations fops =
 static int wait_function(void *unused)
 {  
         while(1) {
+                struct list_head *iter;
+                struct process_struct *objPtr;
+                int changed = 0;
+
                 pr_info("WAITING QUEUE - SLEEP MODE ACTIVATED...\n");
                 wait_event_interruptible(wait_queue_etx, wait_queue_flag != 0 );
                 if(wait_queue_flag == 2) {
                         pr_info("WAITING QUEUE - EXIT MODE - Event Came From Exit Function\n");
                         return 0;
                 }
-                struct list_head *iter;
-                struct process_struct *objPtr;
 
                 pr_info("WAITING QUEUE - ACTIVE - Event Came From Read Function - usageCount:%d\n", ++read_count);
 
-                int changed = 0;
 
                 list_for_each(iter, &m_processListHead){
                         objPtr = list_entry(iter, struct process_struct, _list);
@@ -118,7 +119,7 @@ static int wait_function(void *unused)
                         }
                 }
 
-                if (changed = 0){
+                if (changed == 0){
                         // pr_info("\t\t NOT MEXIDO NEXT PID = %d;\n", PIDnoCHANGED);      /*DEBUG*/
                         nextPID = PIDnoCHANGED;
                 }
