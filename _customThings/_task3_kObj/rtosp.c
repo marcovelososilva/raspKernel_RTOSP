@@ -19,9 +19,9 @@
 uint32_t read_count = 0;
 static struct task_struct *wait_thread;
 
-// dev_t dev = 0;
-// static struct class *dev_class;
-// static struct cdev etx_cdev;
+dev_t dev = 0;
+static struct class *dev_class;
+static struct cdev etx_cdev;
 wait_queue_head_t wait_queue_etx;
 int wait_queue_flag = 0;
 
@@ -29,9 +29,9 @@ int wait_queue_flag = 0;
 //GLOBAL ORIGINAL
 volatile int etx_value = 0;
 
-dev_t dev = 0;
-static struct class *dev_class;
-static struct cdev etx_cdev;
+// dev_t dev = 0;
+// static struct class *dev_class;
+// static struct cdev etx_cdev;
 struct kobject *kobj_ref;
 
 /* Function Prototypes */
@@ -50,6 +50,10 @@ static ssize_t  etx_write(struct file *filp,
 static ssize_t  set_rtosp_show(struct kobject *kobj, 
                         struct kobj_attribute *attr, char *buf);
 static ssize_t  set_rtosp_store(struct kobject *kobj, 
+                        struct kobj_attribute *attr,const char *buf, size_t count);
+static ssize_t  get_next_rtosp_show(struct kobject *kobj, 
+                        struct kobj_attribute *attr, char *buf);
+static ssize_t  get_next_rtosp_store(struct kobject *kobj, 
                         struct kobj_attribute *attr,const char *buf, size_t count);
 
 struct kobj_attribute set_rtosp_attr = __ATTR(set_rtosp, 0664, set_rtosp_show, set_rtosp_store);
@@ -187,6 +191,17 @@ static int __init rtosp_init(void)
             pr_info("Cannot create the Device 1\n");
             goto r_device;
         }
+
+        /* Initialize wait queue */
+        init_waitqueue_head(&wait_queue_etx);
+
+        //Create the kernel thread with name 'mythread'
+        wait_thread = kthread_create(wait_function, NULL, "WaitThread");
+        if (wait_thread) {
+                pr_info("Thread Created successfully\n");
+                wake_up_process(wait_thread);
+        } else
+                pr_info("Thread creation failed\n");
  
         /*Creating a directory in /sys/kernel/ */        
         kobj_ref = kobject_create_and_add("rtosp",kernel_kobj);
@@ -202,14 +217,6 @@ static int __init rtosp_init(void)
                 pr_err("Cannot create GET NEXT RTOSP file......\n");
                 goto r_sysfs_get;
         }
-
-        /*Create the kernel thread with name 'mythread'*/
-        wait_thread = kthread_create(wait_function, NULL, "WaitThread");
-        if (wait_thread) {
-                pr_info("Thread Created successfully\n");
-                wake_up_process(wait_thread);
-        } else
-                pr_info("Thread creation failed\n");
 
         pr_info("RTOSP - Device Driver Insert...Done!!!\n");
         return 0;
