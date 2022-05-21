@@ -8,12 +8,14 @@
 #include <linux/fs.h>
 #include <linux/cdev.h>
 #include <linux/device.h>
-#include<linux/slab.h>          //kmalloc()
-#include<linux/uaccess.h>       //copy_to/from_user()
-#include<linux/sysfs.h> 
-#include<linux/kobject.h>
+#include <linux/slab.h>         //kmalloc()
+#include <linux/uaccess.h>      //copy_to/from_user()
+#include <linux/sysfs.h> 
+#include <linux/kobject.h>
 #include <linux/kthread.h>      //KERNEL THREADS
 #include <linux/wait.h>         // Required for the wait queues
+#include <linux/proc_fs.h>
+#include <linux/sched.h>
 
 //GLOBAL VARIABLES - QUEUE
 uint32_t read_count = 0;
@@ -106,7 +108,17 @@ static ssize_t set_rtosp_store(struct kobject *kobj,
         int paramPID = 0;
         sscanf(buf,"%d",&paramPID);
         pr_info("set_rtosp - Write!!! pid change %d\n", paramPID);
-        etx_value = paramPID;
+        
+        int len=0;
+        struct task_struct *task;
+        
+        for_each_process(task){
+                if(task->pid == paramPID){
+                        task->rtosp = 1;
+                        break;
+                }
+        }
+              
         return count;
 }
 #pragma endregion
