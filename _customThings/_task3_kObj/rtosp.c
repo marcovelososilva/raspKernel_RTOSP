@@ -17,6 +17,7 @@
 #include <linux/proc_fs.h>
 #include <linux/sched.h>
 #include <linux/list.h>
+#include <linux/delay.h>
 
 #pragma region VARIABLES
 //GLOBAL VARIABLES - QUEUE
@@ -37,8 +38,9 @@ struct process_struct{
  struct task_struct *_task;
 };
 struct list_head m_processListHead;
-struct process_struct m_processListStruct;
 
+int nextPID = -999;
+const int PIDnoCHANGED = -999;
 #pragma endregion
 
 #pragma region PROTOTYPES
@@ -91,13 +93,35 @@ static struct file_operations fops =
 static int wait_function(void *unused)
 {  
         while(1) {
-                pr_info("Waiting For Event...\n");
+                pr_info("WAITING QUEUE - SLEEP MODE ACTIVATED...\n");
                 wait_event_interruptible(wait_queue_etx, wait_queue_flag != 0 );
                 if(wait_queue_flag == 2) {
-                        pr_info("Event Came From Exit Function\n");
+                        pr_info("WAITING QUEUE - EXIT MODE - Event Came From Exit Function\n");
                         return 0;
                 }
-                pr_info("Event Came From Read Function - %d\n", ++read_count);
+                struct list_head *iter;
+                struct process_struct *objPtr;
+
+                pr_info("WAITING QUEUE - ACTIVE - Event Came From Read Function - usageCount:%d\n", ++read_count);
+
+                int changed = 0;
+
+                list_for_each(iter, &m_processListHead){
+                        objPtr = list_entry(iter, struct process_struct, _list);
+                        pr_info("\titeration PID:%d, rtosp:%d\n", objPtr->_task->pid, objPtr->_task->rtosp);    /*DEBUG*/
+                        if(objPtr->_task->rtosp == 1){
+                                 changed = 1;
+                                 nextPID = objPtr->_task->pid;
+                                //  pr_info("\t\t IT IS ONE;\n");  /*DEBUG*/
+                                 list_del(iter);
+                                 break;
+                        }
+                }
+
+                if (changed = 0){
+                        // pr_info("\t\t NOT MEXIDO NEXT PID = %d;\n", PIDnoCHANGED);      /*DEBUG*/
+                        nextPID = PIDnoCHANGED;
+                }
                 wait_queue_flag = 0;
         }
         return 0;
@@ -147,20 +171,21 @@ static ssize_t set_rtosp_store(struct kobject *kobj,
 static ssize_t get_next_rtosp_show(struct kobject *kobj, 
                 struct kobj_attribute *attr, char *buf)
 {
-        struct list_head *iter;
-        struct process_struct *objPtr;
-
+        nextPID = PIDnoCHANGED;
         pr_info("get_next_rtosp - Read!!!\n");
        
         wait_queue_flag = 1;
         wake_up_interruptible(&wait_queue_etx);
-       
-        list_for_each(iter, &m_processListHead){
-                objPtr = list_entry(iter, struct process_struct, _list);
-                pr_info("%d\n", objPtr->_task->pid);
+        
+        while(wait_queue_flag != 0 ){
+                usleep_range(10000, 10001);
         }
 
-        return sprintf(buf, "%d", etx_value);
+        // pr_info("nextPID = %d\n", nextPID);  /*DEBUG*/
+        if(nextPID == PIDnoCHANGED){
+                return sprintf(buf, "%s", "NO PID WITH rtosp at 1.");
+        }
+        return sprintf(buf, "%d", nextPID);
 }
 
 /* This function will be called when we write the sysfsfs file */
@@ -308,7 +333,7 @@ static void __exit rtosp_exit(void)
 void addRunningProcesses(){
         struct task_struct *taskNow;
 
-        pr_info("addRunningProcesses! NOW!!!!\n");
+        // pr_info("addRunningProcesses! NOW!!!!\n");      /*DEBUG*/
 
         for_each_process(taskNow){
                 if(taskNow->__state == 0){
