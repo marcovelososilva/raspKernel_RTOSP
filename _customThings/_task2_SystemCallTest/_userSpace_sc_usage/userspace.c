@@ -3,7 +3,7 @@
 // Copyright (C) 2022 RTOSP ISEP
 // Author: João Passos <lrg@slimlogic.co.uk>
 //         Marco Silva <richard@openedhand.com>
-//		   
+//
 // Test the rtosp syscall (#449)
 
 #define _GNU_SOURCE
@@ -26,7 +26,7 @@ int main(void)
 	printf("%d processes w/ RTOSP set to 1\n", size);
 
 	if (size != 0 && size < 10) {
-		for(int i = 0; i < size; i++) 
+		for(int i = 0; i < size; i++)
 			printf("PID: %d\n", user_array[i]);
 	}
 	return 0;
