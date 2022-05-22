@@ -26,5 +26,3 @@ insert: modules
 
 remove: clean
 	sudo rmmod $(MYPROC)
-
-	

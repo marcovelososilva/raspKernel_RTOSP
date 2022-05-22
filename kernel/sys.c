@@ -2712,14 +2712,14 @@ SYSCALL_DEFINE2(rtosp, int *, user_array, int *, cnt)
 	int kernel_buffer[10];
 	long kcnt = 0;
 
-	for_each_process (task) {
+	for_each_process(task) {
 		if ((task->policy == 1 || task->policy == 2) &&
 		    task->rtosp == 1) {
 			kernel_buffer[kcnt] = task->pid;
 			printk(KERN_ALERT "Found %d\n", kernel_buffer[kcnt]);
 			kcnt++;
 		}
-		list_for_each (list, &task->children) {
+		list_for_each(list, &task->children) {
 			task_child =
 				list_entry(list, struct task_struct, sibling);
 			if ((task_child->policy == 1 ||

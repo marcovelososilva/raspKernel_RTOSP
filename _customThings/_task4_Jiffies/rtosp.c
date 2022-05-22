@@ -21,15 +21,15 @@
 
 #pragma region VARIABLES
 //GLOBAL VARIABLES - QUEUE
-uint32_t read_count = 0;
+uint32_t read_count;
 static struct task_struct *wait_thread;
 wait_queue_head_t wait_queue_etx;
 
-dev_t dev = 0;
+dev_t dev;
 static struct class *dev_class;
 static struct cdev etx_cdev;
-int wait_queue_flag = 0;
-volatile int etx_value = 0;
+int wait_queue_flag;
+int etx_value;
 struct kobject *kobj_ref;
 
 //list running processes
@@ -42,7 +42,7 @@ struct list_head m_processListHead;
 int nextPID = -999;
 const int PIDnoCHANGED = -999;
 
-unsigned long rtosp_jiffies_init = 0; /* ++++++++ */
+unsigned long rtosp_jiffies_init; /* ++++++++ */
 #pragma endregion
 
 #pragma region PROTOTYPES
@@ -84,7 +84,7 @@ struct kobj_attribute set_rtosp_attr =
 struct kobj_attribute get_next_rtosp_attr =
 	__ATTR(get_next_rtosp, 0444, get_next_rtosp_show, get_next_rtosp_store);
 
-/* File operation sturcture */
+/* File operation structure */
 static struct file_operations fops = {
 	.owner = THIS_MODULE,
 	.read = etx_read,
@@ -112,7 +112,7 @@ static int wait_function(void *unused)
 		pr_info("WAITING QUEUE - ACTIVE - Event Came From Read Function - usageCount:%d\n",
 			++read_count);
 
-		list_for_each (iter, &m_processListHead) {
+		list_for_each(iter, &m_processListHead) {
 			objPtr = list_entry(iter, struct process_struct, _list);
 			pr_info("\titeration PID:%d, rtosp:%d\n",
 				objPtr->_task->pid,
@@ -153,10 +153,11 @@ static ssize_t set_rtosp_store(struct kobject *kobj,
 	int paramPID = 0;
 	int changed = 0;
 	struct task_struct *task;
+	
 	sscanf(buf, "%d", &paramPID);
 
 	pr_info("SET RTOSP - Write function!\n");
-	for_each_process (task) {
+	for_each_process(task) {
 		if (task->pid == paramPID) {
 			task->rtosp = 1;
 			changed = 1;
@@ -187,14 +188,13 @@ static ssize_t get_next_rtosp_show(struct kobject *kobj,
 	wait_queue_flag = 1;
 	wake_up_interruptible(&wait_queue_etx);
 
-	while (wait_queue_flag != 0) {
+	while (wait_queue_flag != 0)
 		usleep_range(10000, 10001);
-	}
 
 	// pr_info("nextPID = %d\n", nextPID);  /*DEBUG*/
-	if (nextPID == PIDnoCHANGED) {
+	if (nextPID == PIDnoCHANGED)
 		return sprintf(buf, "%s", "NO PID WITH rtosp at 1.");
-	}
+
 	return sprintf(buf, "%d", nextPID);
 }
 
@@ -204,6 +204,7 @@ static ssize_t get_next_rtosp_store(struct kobject *kobj,
 				    const char *buf, size_t count)
 {
 	int paramPID = 0;
+
 	sscanf(buf, "%d", &paramPID);
 	pr_info("get_next_rtosp - Write!!! pid change %d\n", paramPID);
 	return count;
@@ -246,11 +247,13 @@ static ssize_t etx_write(struct file *filp, const char __user *buf, size_t len,
 /* Module Init function */
 static int __init rtosp_init(void)
 {
-	// unsigned long rtosp_jiffies = jiffies;  /* ++++++++ */
+	dev = 0;
+	read_count = 0;
+	wait_queue_flag = 0;
+ 	etx_value = 0;
+	rtosp_jiffies_init = jiffies; /* ++++++++ */
 
-	rtosp_jiffies_init = jiffies;
-
-	//INSTANCIATE THE LIST
+	//INSTANTIATE THE LIST
 	INIT_LIST_HEAD(&m_processListHead);
 
 	/*Allocating Major number*/
@@ -258,7 +261,7 @@ static int __init rtosp_init(void)
 		pr_info("Cannot allocate major number\n");
 		return -1;
 	}
-	pr_info("Major = %d Minor = %d \n", MAJOR(dev), MINOR(dev));
+	pr_info("Major = %d Minor = %d\n", MAJOR(dev), MINOR(dev));
 
 	/*Creating cdev structure*/
 	cdev_init(&etx_cdev, &fops);
@@ -270,7 +273,8 @@ static int __init rtosp_init(void)
 	}
 
 	/*Creating struct class*/
-	if ((dev_class = class_create(THIS_MODULE, "etx_class")) == NULL) {
+	dev_class = class_create(THIS_MODULE, "etx_class");
+	if (dev_class == NULL) {
 		pr_info("Cannot create the struct class\n");
 		goto r_class;
 	}
@@ -307,7 +311,7 @@ static int __init rtosp_init(void)
 		goto r_sysfs_get;
 	}
 
-	//add runing processes to List
+	//add running processes to List
 	addRunningProcesses();
 
 	pr_info("Jiffies: %lu", rtosp_jiffies_init); /* ++++++++ */
@@ -360,12 +364,12 @@ static void __exit rtosp_exit(void)
 #pragma endregion
 
 #pragma region AUXFUNCTIONS
-void addRunningProcesses()
+void addRunningProcesses(void)
 {
 	struct task_struct *taskNow;
 	// pr_info("addRunningProcesses! NOW!!!!\n");      /*DEBUG*/
 
-	for_each_process (taskNow) {
+	for_each_process(taskNow) {
 		if (taskNow->__state == 0) {
 			struct process_struct *procToAdd = kmalloc(
 				sizeof(struct process_struct *), GFP_KERNEL);
