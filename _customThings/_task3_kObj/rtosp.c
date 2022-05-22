@@ -1,4 +1,10 @@
-/** based on EmbeTronicX **/
+// SPDX-License-Identifier: GPL-2.0+
+//
+// Copyright (C) 2022 RTOSP ISEP
+// Author: João Passos <lrg@slimlogic.co.uk>
+//         Marco Silva <richard@openedhand.com>
+//		   based on EmbeTronicX
+
 #include <linux/kernel.h>
 #include <linux/init.h>
 #include <linux/module.h>
@@ -188,7 +194,7 @@ static ssize_t get_next_rtosp_show(struct kobject *kobj,
 		usleep_range(10000, 10001);
 
 	// pr_info("nextPID = %d\n", nextPID);  /*DEBUG*/
-	if (nextPID == PIDnoCHANGED) 
+	if (nextPID == PIDnoCHANGED)
 		return sprintf(buf, "%s", "NO PID WITH rtosp at 1.");
 
 	return sprintf(buf, "%d", nextPID);
@@ -246,7 +252,7 @@ static int __init rtosp_init(void)
 	dev = 0;
 	read_count = 0;
 	wait_queue_flag = 0;
- 	etx_value = 0;
+	etx_value = 0;
 
 	//INSTANTIATE THE LIST
 	INIT_LIST_HEAD(&m_processListHead);

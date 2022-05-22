@@ -1,4 +1,10 @@
-/** based on EmbeTronicX **/
+// SPDX-License-Identifier: GPL-2.0+
+//
+// Copyright (C) 2022 RTOSP ISEP
+// Author: João Passos <lrg@slimlogic.co.uk>
+//         Marco Silva <richard@openedhand.com>
+//		   based on EmbeTronicX
+
 #include <linux/kernel.h>
 #include <linux/init.h>
 #include <linux/module.h>
@@ -153,7 +159,6 @@ static ssize_t set_rtosp_store(struct kobject *kobj,
 	int paramPID = 0;
 	int changed = 0;
 	struct task_struct *task;
-	
 	sscanf(buf, "%d", &paramPID);
 
 	pr_info("SET RTOSP - Write function!\n");
@@ -250,7 +255,7 @@ static int __init rtosp_init(void)
 	dev = 0;
 	read_count = 0;
 	wait_queue_flag = 0;
- 	etx_value = 0;
+	etx_value = 0;
 	rtosp_jiffies_init = jiffies; /* ++++++++ */
 
 	//INSTANTIATE THE LIST

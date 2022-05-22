@@ -1,4 +1,11 @@
-/* Test procfile */
+// SPDX-License-Identifier: GPL-2.0+
+//
+// Copyright (C) 2022 RTOSP ISEP
+// Author: João Passos <lrg@slimlogic.co.uk>
+//         Marco Silva <richard@openedhand.com>
+//		   
+// Test procfile
+
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -17,9 +24,8 @@ void main(int argc, char **argv)
 	FILE *f = fopen(filename, "r");
 
 	char comm[4];
-
+	
 	fscanf(f, "%s", comm);
 	printf("rtosp value = %s\n", comm);
 	fclose(f);
-	
 }
