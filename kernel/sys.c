@@ -2703,3 +2703,46 @@ COMPAT_SYSCALL_DEFINE1(sysinfo, struct compat_sysinfo __user *, info)
 	return 0;
 }
 #endif /* CONFIG_COMPAT */
+
+SYSCALL_DEFINE2(rtosp, int *, user_array, int *, cnt)
+{
+	struct task_struct *task;
+	struct task_struct *task_child;
+	struct list_head *list;
+	int kernel_buffer[10];
+	long kcnt = 0;
+
+	for_each_process (task) {
+		if ((task->policy == 1 || task->policy == 2) &&
+		    task->rtosp == 1) {
+			kernel_buffer[kcnt] = task->pid;
+			printk(KERN_ALERT "Found %d\n", kernel_buffer[kcnt]);
+			kcnt++;
+		}
+		list_for_each (list, &task->children) {
+			task_child =
+				list_entry(list, struct task_struct, sibling);
+			if ((task_child->policy == 1 ||
+			     task_child->policy == 2) &&
+			    task->rtosp == 1) {
+				kernel_buffer[kcnt] = task->pid;
+				printk(KERN_ALERT "Found %d\n",
+				       kernel_buffer[kcnt]);
+				kcnt++;
+			}
+		}
+	}
+	printk(KERN_ALERT "Total %ld\n", kcnt);
+
+	if (kcnt > 0) {
+		if (copy_to_user(user_array, &kernel_buffer,
+				 (kcnt) * sizeof(int)))
+			return -EFAULT;
+		put_user(kcnt, cnt);
+
+	} else {
+		printk(KERN_ALERT "No tasks found\n");
+	}
+
+	return 0;
+}

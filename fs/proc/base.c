@@ -1240,6 +1240,49 @@ out:
 	return err < 0 ? err : count;
 }
 
+/* -----------------------//----------------------- */
+#define MYTMPBUFLEN 11
+static ssize_t rtosp_read(struct file *file, char __user *buf, size_t count,
+			  loff_t *ppos)
+{
+	struct inode *inode = file_inode(file);
+	struct task_struct *task = get_proc_task(inode);
+	ssize_t length;
+	char tmpbuf[MYTMPBUFLEN];
+
+	if (!task)
+		return -ESRCH;
+	length = scnprintf(tmpbuf, MYTMPBUFLEN, "%d", task->rtosp);
+	put_task_struct(task);
+	return simple_read_from_buffer(buf, count, ppos, tmpbuf, length);
+}
+
+static ssize_t rtosp_write(struct file *file, const char __user *buf,
+			   size_t count, loff_t *ppos)
+{
+	struct inode *inode = file_inode(file);
+	struct task_struct *task = get_proc_task(inode);
+	char tmpbuf[MYTMPBUFLEN];
+	int value, num;
+
+	if (!task)
+		return -ESRCH;
+	if (copy_from_user(tmpbuf, buf, count))
+		return -EFAULT;
+	num = sscanf(buf, "%d", &value);
+	if (num != 1)
+		return -EFAULT;
+	task->rtosp = value;
+	put_task_struct(task);
+	return simple_write_to_buffer(tmpbuf, MYTMPBUFLEN, ppos, buf, count);
+}
+
+static const struct file_operations proc_rtosp_operations = {
+	.read = rtosp_read,
+	.write = rtosp_write,
+};
+/* -----------------------//----------------------- */
+
 static const struct file_operations proc_oom_score_adj_operations = {
 	.read		= oom_score_adj_read,
 	.write		= oom_score_adj_write,
@@ -3284,6 +3327,9 @@ static const struct pid_entry tgid_base_stuff[] = {
 #ifdef CONFIG_SECCOMP_CACHE_DEBUG
 	ONE("seccomp_cache", S_IRUSR, proc_pid_seccomp_cache),
 #endif
+	/* -----//----- */
+	REG("rtosp", S_IRUGO|S_IWUGO, proc_rtosp_operations),
+	/* -----//----- */
 };
 
 static int proc_tgid_base_readdir(struct file *file, struct dir_context *ctx)
@@ -3617,6 +3663,9 @@ static const struct pid_entry tid_base_stuff[] = {
 #ifdef CONFIG_SECCOMP_CACHE_DEBUG
 	ONE("seccomp_cache", S_IRUSR, proc_pid_seccomp_cache),
 #endif
+	/* -----//----- */
+	REG("rtosp", S_IRUGO|S_IWUSR, proc_rtosp_operations),
+	/* -----//----- */
 };
 
 static int proc_tid_base_readdir(struct file *file, struct dir_context *ctx)
